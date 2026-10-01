@@ -63,6 +63,15 @@
       padding: 0.6rem 1rem;
       cursor: pointer;
     }
+    select {
+      font: inherit;
+      width: 100%;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+    }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     #progress { margin-top: 0.8rem; color: var(--muted); font-size: 0.9rem; }
@@ -112,6 +121,10 @@
         Cette IA tourne <strong>entièrement dans ton navigateur</strong> : tes messages ne sont envoyés à aucun serveur.
         Le premier lancement télécharge le modèle (quelques centaines de Mo), puis il est gardé en cache.
       </p>
+      <p class="note" style="margin-top:0.8rem">
+        <label for="model">Modèle (plus il est gros, plus il est intelligent, mais plus il demande de mémoire vidéo) :</label>
+      </p>
+      <p style="margin-top:0.4rem"><select id="model"></select></p>
       <p style="margin-top:0.8rem"><button id="start">Charger le modèle</button></p>
       <div id="progress"></div>
       <div id="bar"><div></div></div>
@@ -129,7 +142,23 @@
   <script type="module">
     import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-    const MODEL = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+    const modelSelect = document.getElementById("model");
+    const PREFERRED = "Llama-3.1-8B-Instruct-q4f16_1-MLC";
+
+    // Liste des modèles de chat fournis par WebLLM, triés par mémoire vidéo requise
+    const models = webllm.prebuiltAppConfig.model_list
+      .filter((m) => !m.model_type || m.model_type === 0)
+      .filter((m) => !/embed|vision|-VL/i.test(m.model_id))
+      .sort((a, b) => (a.vram_required_MB || 0) - (b.vram_required_MB || 0));
+
+    for (const m of models) {
+      const opt = document.createElement("option");
+      opt.value = m.model_id;
+      const go = m.vram_required_MB ? (m.vram_required_MB / 1024).toFixed(1) : "?";
+      opt.textContent = m.model_id.replace(/-MLC$/, "") + " (~" + go + " Go de VRAM)";
+      modelSelect.appendChild(opt);
+    }
+    if (models.some((m) => m.model_id === PREFERRED)) modelSelect.value = PREFERRED;
 
     const startBtn = document.getElementById("start");
     const progress = document.getElementById("progress");
@@ -141,7 +170,7 @@
     const send = document.getElementById("send");
 
     const history = [
-      { role: "system", content: "Tu es un assistant utile et concis. Réponds dans la langue de l'utilisateur." }
+      { role: "system", content: "Tu es un assistant francophone précis et honnête. Réponds dans la langue de l'utilisateur, de façon claire et structurée. Raisonne étape par étape pour les questions complexes. Si tu ne sais pas ou si tu n'es pas sûr, dis-le plutôt que d'inventer." }
     ];
     let engine = null;
     let busy = false;
@@ -162,10 +191,11 @@
 
     startBtn.addEventListener("click", async () => {
       startBtn.disabled = true;
+      modelSelect.disabled = true;
       bar.style.display = "block";
       progress.textContent = "Démarrage…";
       try {
-        engine = await webllm.CreateMLCEngine(MODEL, {
+        engine = await webllm.CreateMLCEngine(modelSelect.value, {
           initProgressCallback: (p) => {
             progress.textContent = p.text;
             barFill.style.width = Math.round((p.progress || 0) * 100) + "%";
@@ -179,6 +209,7 @@
       } catch (err) {
         progress.textContent = "Erreur au chargement : " + (err && err.message ? err.message : err);
         startBtn.disabled = false;
+        modelSelect.disabled = false;
       }
     });
 
@@ -192,7 +223,9 @@
       try {
         const stream = await engine.chat.completions.create({
           messages: history,
-          stream: true
+          stream: true,
+          temperature: 0.6,
+          top_p: 0.9
         });
         for await (const chunk of stream) {
           full += chunk.choices[0]?.delta?.content || "";
