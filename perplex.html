@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>perplex · rhys.fr</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --panel: #ffffff;
+      --ink: #14202e;
+      --muted: #5b6b7c;
+      --accent: #1f6feb;
+      --line: #d5dde6;
+      --me: #dbe8fd;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101820;
+        --panel: #172230;
+        --ink: #e8eef5;
+        --muted: #8a9bad;
+        --accent: #5aa2ff;
+        --line: #26364a;
+        --me: #1d3556;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 42rem;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.02em; }
+    a { color: var(--accent); }
+    .note { color: var(--muted); font-size: 0.95rem; line-height: 1.5; margin: 0; }
+    #start-box {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    button {
+      font: inherit;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+    }
+    select {
+      font: inherit;
+      width: 100%;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #progress { margin-top: 0.8rem; color: var(--muted); font-size: 0.9rem; }
+    #bar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 0.4rem; overflow: hidden; display: none; }
+    #bar div { height: 100%; width: 0; background: var(--accent); }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding: 0.2rem;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 0.6rem 0.9rem;
+      border-radius: 10px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .me { align-self: flex-end; background: var(--me); }
+    .ai { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
+    form { display: flex; gap: 0.5rem; }
+    textarea {
+      flex: 1;
+      font: inherit;
+      color: var(--ink);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      resize: none;
+    }
+    footer { color: var(--muted); font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>perplex</h1>
+      <a href="/">← Accueil</a>
+    </header>
+
+    <div id="start-box">
+      <p class="note">
+        Cette IA tourne <strong>entièrement dans ton navigateur</strong> : tes messages ne sont envoyés à aucun serveur.
+        Le premier lancement télécharge le modèle (quelques centaines de Mo), puis il est gardé en cache.
+      </p>
+      <p class="note" style="margin-top:0.8rem">
+        <label for="model">Modèle (plus il est gros, plus il est intelligent, mais plus il demande de mémoire vidéo) :</label>
+      </p>
+      <p style="margin-top:0.4rem"><select id="model"></select></p>
+      <p style="margin-top:0.8rem"><button id="start">Charger le modèle</button></p>
+      <div id="progress"></div>
+      <div id="bar"><div></div></div>
+    </div>
+
+    <div id="log" aria-live="polite"></div>
+
+    <form id="form">
+      <textarea id="input" rows="2" placeholder="Écris ton message…" disabled></textarea>
+      <button id="send" type="submit" disabled>Envoyer</button>
+    </form>
+    <footer>Petit modèle local : les réponses peuvent être approximatives.</footer>
+  </div>
+
+  <script type="module">
+    import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+    const modelSelect = document.getElementById("model");
+    const PREFERRED = "Llama-3.1-8B-Instruct-q4f16_1-MLC";
+
+    // Liste des modèles de chat fournis par WebLLM, triés par mémoire vidéo requise
+    const models = webllm.prebuiltAppConfig.model_list
+      .filter((m) => !m.model_type || m.model_type === 0)
+      .filter((m) => !/embed|vision|-VL/i.test(m.model_id))
+      .sort((a, b) => (a.vram_required_MB || 0) - (b.vram_required_MB || 0));
+
+    for (const m of models) {
+      const opt = document.createElement("option");
+      opt.value = m.model_id;
+      const go = m.vram_required_MB ? (m.vram_required_MB / 1024).toFixed(1) : "?";
+      opt.textContent = m.model_id.replace(/-MLC$/, "") + " (~" + go + " Go de VRAM)";
+      modelSelect.appendChild(opt);
+    }
+    if (models.some((m) => m.model_id === PREFERRED)) modelSelect.value = PREFERRED;
+
+    const startBtn = document.getElementById("start");
+    const progress = document.getElementById("progress");
+    const bar = document.getElementById("bar");
+    const barFill = bar.firstElementChild;
+    const log = document.getElementById("log");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const send = document.getElementById("send");
+
+    const history = [
+      { role: "system", content: "Tu es un assistant francophone précis et honnête. Réponds dans la langue de l'utilisateur, de façon claire et structurée. Raisonne étape par étape pour les questions complexes. Si tu ne sais pas ou si tu n'es pas sûr, dis-le plutôt que d'inventer." }
+    ];
+    let engine = null;
+    let busy = false;
+
+    function addMsg(text, who) {
+      const el = document.createElement("div");
+      el.className = "msg " + who;
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
+    if (!navigator.gpu) {
+      startBtn.disabled = true;
+      progress.textContent = "Ton navigateur ne supporte pas WebGPU. Essaie une version récente de Chrome ou Edge sur ordinateur.";
+    }
+
+    startBtn.addEventListener("click", async () => {
+      startBtn.disabled = true;
+      modelSelect.disabled = true;
+      bar.style.display = "block";
+      progress.textContent = "Démarrage…";
+      try {
+        engine = await webllm.CreateMLCEngine(modelSelect.value, {
+          initProgressCallback: (p) => {
+            progress.textContent = p.text;
+            barFill.style.width = Math.round((p.progress || 0) * 100) + "%";
+          }
+        });
+        document.getElementById("start-box").style.display = "none";
+        input.disabled = false;
+        send.disabled = false;
+        input.focus();
+        addMsg("Modèle chargé. Pose-moi une question !", "ai");
+      } catch (err) {
+        progress.textContent = "Erreur au chargement : " + (err && err.message ? err.message : err);
+        startBtn.disabled = false;
+        modelSelect.disabled = false;
+      }
+    });
+
+    async function ask(text) {
+      busy = true;
+      send.disabled = true;
+      addMsg(text, "me");
+      history.push({ role: "user", content: text });
+      const out = addMsg("…", "ai");
+      let full = "";
+      try {
+        const stream = await engine.chat.completions.create({
+          messages: history,
+          stream: true,
+          temperature: 0.6,
+          top_p: 0.9
+        });
+        for await (const chunk of stream) {
+          full += chunk.choices[0]?.delta?.content || "";
+          out.textContent = full;
+          log.scrollTop = log.scrollHeight;
+        }
+        history.push({ role: "assistant", content: full });
+      } catch (err) {
+        out.textContent = "Erreur : " + (err && err.message ? err.message : err);
+      }
+      busy = false;
+      send.disabled = false;
+      input.focus();
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text || busy || !engine) return;
+      input.value = "";
+      ask(text);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+  </script>
+</body>
+</html>
