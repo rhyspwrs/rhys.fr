@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rhys · rhys.fr</title>
+  <meta name="description" content="Projets et expérimentations.">
+  <meta property="og:title" content="Rhys · rhys.fr">
+  <meta property="og:description" content="Projets et expérimentations.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛡️%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --panel: #ffffff;
+      --ink: #14202e;
+      --muted: #5b6b7c;
+      --accent: #1f6feb;
+      --line: #d5dde6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101820;
+        --panel: #172230;
+        --ink: #e8eef5;
+        --muted: #8a9bad;
+        --accent: #5aa2ff;
+        --line: #26364a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem 3rem; }
+    h1 {
+      font-size: clamp(2.6rem, 9vw, 4.5rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin: 0 0 0.8rem;
+    }
+    h1 span { color: var(--accent); }
+    .role { font-size: 1.2rem; color: var(--muted); margin: 0 0 2rem; }
+    h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin: 2.5rem 0 0.8rem;
+    }
+    p { margin: 0 0 1rem; }
+    a { color: var(--accent); }
+    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+    .cards { display: grid; gap: 0.8rem; }
+    .card {
+      display: block;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      text-decoration: none;
+      color: var(--ink);
+    }
+    .card:hover { border-color: var(--accent); }
+    .card strong { display: block; }
+    .card small { color: var(--muted); font-size: 0.95rem; }
+    ul { margin: 0; padding-left: 1.2rem; }
+    li { margin-bottom: 0.3rem; }
+    footer { margin-top: 3rem; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Rhys<span>.</span></h1>
+
+
+    <h2>Projets</h2>
+    <div class="cards">
+      <a class="card" href="/perplex.html">
+        <strong>perplex</strong>
+        <small>Un chat IA qui tourne entièrement dans ton navigateur, sans serveur.</small>
+      </a>
+      <a class="card" href="/motdepasse.html">
+        <strong>Mots de passe</strong>
+        <small>Générateur et testeur de mots de passe, 100 % dans le navigateur.</small>
+      </a>
+    </div>
+
+    <h2>Contact</h2>
+    <p><a href="mailto:rhys@rhys.fr">rhys@rhys.fr</a></p>
+
+    <footer>© 2026 rhys.fr</footer>
+  </main>
+</body>
+</html>
