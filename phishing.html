@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz phishing · rhys.fr</title>
+<link rel="stylesheet" href="/style.css">
+<style>.msg{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;margin:.8rem 0;white-space:pre-wrap;overflow-wrap:anywhere}.meta{color:var(--muted);font-size:.9rem}</style>
+</head>
+<body>
+<main>
+  <header><h1>Quiz phishing</h1><a href="/">← Accueil</a></header>
+  <section>
+    <div class="meta" id="count"></div>
+    <div class="meta" id="from"></div>
+    <div class="msg" id="body"></div>
+    <div class="row" id="choices">
+      <button type="button" data-a="0" class="ghost">Légitime</button>
+      <button type="button" data-a="1">Arnaque</button>
+    </div>
+    <div class="result" id="fb" hidden aria-live="polite"></div>
+    <p><button type="button" id="next" hidden>Suivant</button></p>
+  </section>
+  <p class="note">Tous les messages sont fictifs. Règle d'or : ne clique jamais depuis le message, va directement sur le site ou l'appli officielle.</p>
+</main>
+<script>
+const Q = [
+  { from: "SMS · +33 7 00 00 00 00", body: "Colissimo : votre colis est en attente. Des frais de 1,99 € sont à régler sous 24 h : http://colis-suivi-fr.top/pay", scam: 1, why: "Domaine étrange en « .top », urgence de 24 h et petits frais pour récupérer ta carte bancaire : le grand classique." },
+  { from: "E-mail · no-reply@votre-banque.example", body: "Votre code de vérification est 482913. Il expire dans 10 minutes.\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.", scam: 0, why: "Aucun lien, aucune demande d'action, et tu venais de te connecter. Si tu n'étais pas à l'origine de la demande, ne communique jamais ce code et change ton mot de passe." },
+  { from: "E-mail · support@it-helpdesk-corp.example", body: "Bonjour,\nVotre boîte mail est presque pleine. Répondez à ce message avec votre identifiant et votre mot de passe pour que nous augmentions votre quota.", scam: 1, why: "Un vrai support ne te demande JAMAIS ton mot de passe, ni par mail ni par téléphone." },
+  { from: "E-mail · direction@societe-exemple.example (« Votre directeur »)", body: "Je suis en réunion, je ne peux pas appeler. J'ai besoin de toi pour un achat urgent et confidentiel : prends 3 cartes cadeaux de 100 € et envoie-moi les codes par retour de mail.", scam: 1, why: "Fraude au président : fausse urgence, confidentialité, demande de cartes cadeaux. Vérifie par un autre canal (appel, messagerie interne)." },
+  { from: "E-mail · commandes@boutique-exemple.example", body: "Bonjour, votre commande n° 48213 a été expédiée. Vous pouvez suivre son acheminement depuis votre compte client sur notre site.", scam: 0, why: "Pas d'urgence, pas de demande d'informations ni de paiement, et tu avais passé commande. Dans le doute, tape l'adresse du site toi-même plutôt que de cliquer." },
+  { from: "SMS · Assurance Maladie", body: "Votre carte Vitale expire. Pour la renouveler gratuitement, mettez à jour vos informations et votre RIB : http://ameli-renouvellement.example-secure.com", scam: 1, why: "Le lien n'est pas le site officiel, on te demande ton RIB et la menace d'expiration est inventée." }
+];
+let i = 0, score = 0, answered = false;
+const $ = (id) => document.getElementById(id);
+function show() {
+  const q = Q[i];
+  $("count").textContent = "Message " + (i + 1) + " sur " + Q.length;
+  $("from").textContent = q.from;
+  $("body").textContent = q.body;
+  $("fb").hidden = true;
+  $("next").hidden = true;
+  $("choices").hidden = false;
+  answered = false;
+}
+$("choices").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b || answered) return;
+  answered = true;
+  const q = Q[i], ok = +b.dataset.a === q.scam;
+  if (ok) score++;
+  $("fb").hidden = false;
+  $("fb").textContent = (ok ? "✅ Bien vu. " : "❌ Raté. ") + "C'était " + (q.scam ? "une arnaque. " : "un message légitime. ") + q.why;
+  $("next").hidden = false;
+  $("next").textContent = i === Q.length - 1 ? "Voir mon score" : "Suivant";
+});
+$("next").addEventListener("click", () => {
+  i++;
+  if (i < Q.length) { show(); return; }
+  $("count").textContent = "Terminé";
+  $("from").textContent = "";
+  $("body").textContent = "Score : " + score + " / " + Q.length + (score === Q.length ? ". Sans faute !" : ". Relis les explications et recommence.");
+  $("choices").hidden = true;
+  $("fb").hidden = true;
+  $("next").textContent = "Recommencer";
+  $("next").onclick = () => { i = 0; score = 0; $("next").onclick = null; location.reload(); };
+});
+show();
+</script>
+</body>
+</html>
