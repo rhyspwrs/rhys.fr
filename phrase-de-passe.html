@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phrase de passe · rhys.fr</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header><h1>Phrase de passe</h1><a href="/">← Accueil</a></header>
+  <section>
+    <div class="row">
+      <input type="text" id="out" readonly aria-label="Phrase de passe générée">
+      <button id="copy" type="button">Copier</button>
+      <button id="regen" type="button" class="ghost">Nouvelle</button>
+    </div>
+    <p style="margin:1rem 0 .3rem"><label for="n">Nombre de mots : <strong id="nv">6</strong></label></p>
+    <input type="range" id="n" min="4" max="10" value="6" style="width:100%;accent-color:var(--accent)">
+    <p style="margin:1rem 0 .3rem"><label for="sep">Séparateur</label></p>
+    <select id="sep"><option value="-">Tiret ( - )</option><option value=" ">Espace</option><option value=".">Point ( . )</option><option value="">Aucun</option></select>
+    <p style="margin:1rem 0 0"><label><input type="checkbox" id="cap"> Majuscule à chaque mot</label></p>
+    <p style="margin:.4rem 0 0"><label><input type="checkbox" id="num"> Ajouter un chiffre à la fin</label></p>
+    <p id="info" style="margin-bottom:0"></p>
+    <p class="note">Une phrase de passe est une suite de mots tirés au hasard : longue donc solide, mais plus facile à retenir qu'un mélange de symboles. Le tirage utilise le générateur aléatoire sécurisé du navigateur, rien n'est envoyé ni enregistré.</p>
+  </section>
+</main>
+<script>
+const WORDS = [...new Set(`abeille acier agneau aigle ail aimant algue amande ananas ancre ange anneau arbre ardoise argent argile armoire aube avion avoine bague balai balcon bambou banane barque bassin bateau beurre biche bijou blason bocal bonbon botte bougie boulon branche brique brume bulle cabane cactus cadeau cafe caillou calme camion canard canif canot carotte carton castor cerise chaise chaton chemin cheval chien cigale ciel cirque citron clavier clef cloche cobalt colibri colline corail corde coton coucou crayon cresson cuivre cygne dahlia dauphin desert dindon dragon eclair ecureuil eglise element encre epice etoile etang falaise farine fenetre ferme feuille fleuve flocon foret fougere fourmi fraise fromage fumee galet garage gazelle gazon genou girafe glacier gomme grange grenier grotte guitare hamac harpe hibou hirondelle horloge huitre iceberg igloo ile jardin jasmin jonquille journal jungle kiwi lac lagune lampe lapin lavande lentille levier lezard licorne lierre lilas lion loutre lune lutin magnolia maison mandarine marmotte meduse melon menthe miel miroir moineau montagne moulin mouton muguet nacre navire nenuphar nuage noisette oasis ocean olivier orage orchidee ortie oursin palmier panier papillon parapluie pelican perle phare piano pigeon pinceau plage plume pomme pont poney prairie prune puits quartz raisin renard riviere roche roseau ruban sable safran saphir sapin savon sentier singe sirop soleil source sucre tambour tapis tigre tomate tonnerre tortue tulipe tunnel valise vallee velours verger vigne violon volcan voilier zebre`.split(/\s+/))];
+const $ = (id) => document.getElementById(id);
+function randInt(max) {
+  const lim = Math.floor(0x100000000 / max) * max, b = new Uint32Array(1);
+  do { crypto.getRandomValues(b); } while (b[0] >= lim);
+  return b[0] % max;
+}
+function gen() {
+  const n = +$("n").value, sep = $("sep").value;
+  $("nv").textContent = n;
+  let w = Array.from({ length: n }, () => WORDS[randInt(WORDS.length)]);
+  if ($("cap").checked) w = w.map((x) => x[0].toUpperCase() + x.slice(1));
+  let p = w.join(sep);
+  let bits = n * Math.log2(WORDS.length);
+  if ($("num").checked) { p += randInt(10); bits += Math.log2(10); }
+  $("out").value = p;
+  const lvl = bits < 50 ? "Moyen" : bits < 70 ? "Bon" : "Très fort";
+  $("info").innerHTML = "<strong>" + lvl + "</strong> · environ " + Math.round(bits) + " bits d'entropie (liste de " + WORDS.length + " mots)";
+}
+for (const id of ["n", "sep", "cap", "num"]) $(id).addEventListener("input", gen);
+$("regen").addEventListener("click", gen);
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("out").value); $("copy").textContent = "Copié ✓"; }
+  catch (e) { $("out").select(); $("copy").textContent = "Sélectionné"; }
+  setTimeout(() => { $("copy").textContent = "Copier"; }, 1500);
+});
+gen();
+</script>
+</body>
+</html>
