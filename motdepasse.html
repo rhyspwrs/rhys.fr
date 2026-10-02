@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mots de passe · rhys.fr</title>
+  <meta name="description" content="Générateur et testeur de mots de passe, 100 % dans le navigateur.">
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --panel: #ffffff;
+      --ink: #14202e;
+      --muted: #5b6b7c;
+      --accent: #1f6feb;
+      --line: #d5dde6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101820;
+        --panel: #172230;
+        --ink: #e8eef5;
+        --muted: #8a9bad;
+        --accent: #5aa2ff;
+        --line: #26364a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    main { max-width: 40rem; margin: 0 auto; padding: 1.5rem 1.2rem 3rem; }
+    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.2rem; }
+    h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.02em; }
+    h2 { font-size: 1.1rem; margin: 0 0 0.8rem; }
+    a { color: var(--accent); }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .row { display: flex; gap: 0.5rem; }
+    input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      font: 1.05rem ui-monospace, Consolas, monospace;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+    }
+    button {
+      font: inherit;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      cursor: pointer;
+    }
+    button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; margin: 1rem 0 0.4rem; }
+    .opts label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .len { margin-top: 1rem; display: flex; align-items: center; gap: 0.8rem; }
+    .len input { flex: 1; accent-color: var(--accent); }
+    .meter { height: 8px; background: var(--line); border-radius: 4px; margin: 0.8rem 0 0.3rem; overflow: hidden; }
+    .meter div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+    .verdict { color: var(--muted); font-size: 0.92rem; }
+    .verdict strong { color: var(--ink); }
+    .note { color: var(--muted); font-size: 0.85rem; margin: 0.8rem 0 0; }
+    .crack { margin-top: 0.5rem; }
+    .fun { color: var(--muted); font-style: italic; margin-top: 0.2rem; min-height: 1.5em; }
+    .scenario { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0.8rem 1.1rem; margin-bottom: 1rem; }
+    .scenario label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+    select {
+      width: 100%;
+      font: inherit;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+    }
+    select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (max-width: 30rem) { .opts { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Mots de passe</h1>
+      <a href="/">← Accueil</a>
+    </header>
+
+    <div class="scenario">
+      <label for="scenario">Scénario d'attaque</label>
+      <select id="scenario">
+        <option value="online">Site web avec limitation d'essais (≈ 100 essais/s)</option>
+        <option value="offline" selected>Base de données volée, GPU (≈ 10 milliards d'essais/s)</option>
+        <option value="cluster">Super-cluster de GPU (≈ 1 000 milliards d'essais/s)</option>
+      </select>
+    </div>
+
+    <section>
+      <h2>Générer</h2>
+      <div class="row">
+        <input type="text" id="gen-out" readonly aria-label="Mot de passe généré">
+        <button id="copy" type="button">Copier</button>
+        <button id="regen" type="button" class="ghost">Nouveau</button>
+      </div>
+      <div class="len">
+        <label for="len">Longueur : <strong id="len-val">20</strong></label>
+        <input type="range" id="len" min="8" max="64" value="20">
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="o-lower" checked> Minuscules</label>
+        <label><input type="checkbox" id="o-upper" checked> Majuscules</label>
+        <label><input type="checkbox" id="o-digits" checked> Chiffres</label>
+        <label><input type="checkbox" id="o-symbols" checked> Symboles</label>
+        <label><input type="checkbox" id="o-ambig"> Éviter les caractères ambigus (0 O 1 l I)</label>
+      </div>
+      <div class="meter"><div id="gen-bar"></div></div>
+      <div class="verdict" id="gen-verdict"></div>
+      <div class="crack" id="gen-crack"></div>
+      <div class="fun" id="gen-fun"></div>
+    </section>
+
+    <section>
+      <h2>Tester un mot de passe</h2>
+      <input type="text" id="test-in" autocomplete="off" spellcheck="false" placeholder="Saisis un mot de passe à évaluer" aria-label="Mot de passe à tester">
+      <div class="meter"><div id="test-bar"></div></div>
+      <div class="verdict" id="test-verdict">Saisis un mot de passe pour voir l'estimation.</div>
+      <div class="crack" id="test-crack"></div>
+      <div class="fun" id="test-fun"></div>
+      <p class="note">L'estimation est approximative. Ne saisis jamais ici un mot de passe que tu utilises vraiment : même si rien n'est envoyé, mieux vaut tester un mot de passe équivalent.</p>
+    </section>
+
+    <p class="note">Tout se passe dans ton navigateur : rien n'est envoyé ni enregistré. Le temps de cassage est une estimation : il dépend surtout de l'algorithme qui protège le mot de passe (bcrypt ou Argon2 ralentissent énormément l'attaquant par rapport à MD5). Les mots de passe sont tirés avec le générateur aléatoire sécurisé du navigateur (<code>crypto.getRandomValues</code>).</p>
+  </main>
+
+  <script>
+    const SETS = {
+      lower: "abcdefghijklmnopqrstuvwxyz",
+      upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      digits: "0123456789",
+      symbols: "!@#$%^&*()-_=+[]{};:,.<>?/~"
+    };
+    const AMBIG = /[0O1lI|]/g;
+    const COMMON = ["password", "motdepasse", "azerty", "qwerty", "123456", "admin", "letmein", "welcome", "iloveyou", "bonjour", "soleil", "football", "doudou"];
+
+    const $ = (id) => document.getElementById(id);
+    const out = $("gen-out");
+    const lenInput = $("len");
+
+    // Entier aléatoire uniforme dans [0, max) sans biais
+    function randInt(max) {
+      const limit = Math.floor(0x100000000 / max) * max;
+      const buf = new Uint32Array(1);
+      do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+      return buf[0] % max;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = randInt(i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function verdictFor(bits) {
+      if (bits < 40) return "Faible";
+      if (bits < 60) return "Moyen";
+      if (bits < 80) return "Bon";
+      return "Très fort";
+    }
+
+    const RATES = { online: 100, offline: 1e10, cluster: 1e12 };
+    const last = { gen: null, test: null };
+
+    function fmtBig(n) {
+      if (n < 1e6) return Math.round(n).toLocaleString("fr-FR");
+      const e = Math.floor(Math.log10(n));
+      const m = (n / Math.pow(10, e)).toFixed(1).replace(".", ",");
+      return m + " × 10<sup>" + e + "</sup>";
+    }
+
+    function fmtDuration(sec) {
+      if (sec < 1) return "moins d'une seconde";
+      if (sec < 60) return Math.round(sec) + " secondes";
+      if (sec < 3600) return Math.round(sec / 60) + " minutes";
+      if (sec < 86400) return Math.round(sec / 3600) + " heures";
+      if (sec < 31557600) return Math.round(sec / 86400) + " jours";
+      const y = sec / 31557600;
+      if (y < 1e6) return Math.round(y).toLocaleString("fr-FR") + " ans";
+      if (y < 1e9) return (y / 1e6).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " millions d'années";
+      if (y < 1e12) return (y / 1e9).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " milliards d'années";
+      return fmtBig(y) + " ans";
+    }
+
+    function funLine(sec) {
+      const y = sec / 31557600;
+      if (sec < 1) return "Instantané. Un clignement d'œil, c'est déjà trop long.";
+      if (sec < 60) return "Le temps de lire cette phrase.";
+      if (sec < 3600) return "Le temps de boire un café.";
+      if (sec < 86400) return "Le temps de binge-watcher une saison de série.";
+      if (sec < 30 * 86400) return "Le temps de finir un jeu vidéo à 100 %.";
+      if (sec < 320 * 86400) return "Presque le temps de faire un aller-retour Terre-Lune en voiture (≈ 320 jours à 100 km/h).";
+      if (y < 3) return "On aurait le temps de faire un aller-retour Terre-Lune en voiture avant de craquer ce mot de passe.";
+      if (y < 100) return "Le temps d'une carrière entière, sans une seule pause café.";
+      if (y < 1e3) return "Tes arrière-arrière-petits-enfants auraient le temps d'abandonner.";
+      if (y < 1e4) return "De l'ordre de l'âge des pyramides de Gizeh (≈ 4 500 ans).";
+      if (y < 1e5) return "Autour de la fin de la dernière glaciation (il y a ≈ 12 000 ans), voire bien avant.";
+      if (y < 1e6) return "Homo sapiens existe depuis ≈ 300 000 ans : ce serait plus long que toute notre espèce.";
+      if (y < 1e8) return "On parle de l'ère des dinosaures (disparus il y a ≈ 66 millions d'années).";
+      if (y < 1e9) return "Les premiers animaux sont apparus il y a ≈ 600 millions d'années : même ordre de grandeur.";
+      if (y < 1.38e10) return "Le même ordre de grandeur que l'âge de l'Univers (≈ 13,8 milliards d'années).";
+      const r = y / 1.38e10;
+      const txt = r < 10 ? r.toFixed(1).replace(".", ",") : fmtBig(r);
+      return "Soit " + txt + " fois l'âge de l'Univers. Même le Big Bang n'a pas assez de recul.";
+    }
+
+    function show(prefix, bits) {
+      last[prefix] = bits;
+      $(prefix + "-bar").style.width = Math.max(0, Math.min(100, bits)) + "%";
+      $(prefix + "-verdict").innerHTML = "<strong>" + verdictFor(bits) + "</strong> · environ " + Math.round(bits) + " bits d'entropie";
+      // temps moyen = la moitié de l'espace des possibilités
+      const sec = Math.pow(2, bits - 1) / RATES[$("scenario").value];
+      $(prefix + "-crack").innerHTML = "Temps moyen pour le casser : <strong>" + fmtDuration(sec) + "</strong>";
+      $(prefix + "-fun").innerHTML = funLine(sec);
+    }
+
+    function clearCrack(prefix) {
+      last[prefix] = null;
+      $(prefix + "-crack").textContent = "";
+      $(prefix + "-fun").textContent = "";
+    }
+
+    $("scenario").addEventListener("change", () => {
+      for (const p of ["gen", "test"]) if (last[p] !== null) show(p, last[p]);
+    });
+
+    function generate() {
+      const pools = [];
+      for (const [key, id] of [["lower", "o-lower"], ["upper", "o-upper"], ["digits", "o-digits"], ["symbols", "o-symbols"]]) {
+        if ($(id).checked) {
+          let set = SETS[key];
+          if ($("o-ambig").checked) set = set.replace(AMBIG, "");
+          pools.push(set);
+        }
+      }
+      if (!pools.length) {
+        out.value = "";
+        $("gen-bar").style.width = "0%";
+        $("gen-verdict").textContent = "Coche au moins un type de caractères.";
+        clearCrack("gen");
+        return;
+      }
+      const len = parseInt(lenInput.value, 10);
+      const all = pools.join("");
+      // au moins un caractère de chaque type choisi
+      const chars = pools.map((p) => p[randInt(p.length)]);
+      while (chars.length < len) chars.push(all[randInt(all.length)]);
+      out.value = shuffle(chars).join("");
+      show("gen", len * Math.log2(all.length));
+    }
+
+    function estimate(pw) {
+      if (!pw) return 0;
+      let pool = 0;
+      if (/[a-z]/.test(pw)) pool += 26;
+      if (/[A-Z]/.test(pw)) pool += 26;
+      if (/[0-9]/.test(pw)) pool += 10;
+      if (/[^A-Za-z0-9]/.test(pw)) pool += 32;
+      let bits = pw.length * Math.log2(pool);
+      // pénalité si peu de caractères distincts
+      bits *= 0.5 + 0.5 * (new Set(pw).size / pw.length);
+      if (/(.)\1{2,}/.test(pw)) bits *= 0.8;
+      if (/(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef)/i.test(pw)) bits *= 0.8;
+      const lower = pw.toLowerCase();
+      if (COMMON.some((w) => lower.includes(w))) bits = Math.min(bits, 28);
+      return bits;
+    }
+
+    $("test-in").addEventListener("input", (e) => {
+      const pw = e.target.value;
+      if (!pw) {
+        $("test-bar").style.width = "0%";
+        $("test-verdict").textContent = "Saisis un mot de passe pour voir l'estimation.";
+        clearCrack("test");
+        return;
+      }
+      show("test", estimate(pw));
+    });
+
+    lenInput.addEventListener("input", () => { $("len-val").textContent = lenInput.value; generate(); });
+    for (const id of ["o-lower", "o-upper", "o-digits", "o-symbols", "o-ambig"]) $(id).addEventListener("change", generate);
+    $("regen").addEventListener("click", generate);
+
+    $("copy").addEventListener("click", async () => {
+      if (!out.value) return;
+      try {
+        await navigator.clipboard.writeText(out.value);
+        $("copy").textContent = "Copié ✓";
+      } catch (e) {
+        out.select();
+        $("copy").textContent = "Sélectionné";
+      }
+      setTimeout(() => { $("copy").textContent = "Copier"; }, 1500);
+    });
+
+    generate();
+  </script>
+</body>
+</html>
