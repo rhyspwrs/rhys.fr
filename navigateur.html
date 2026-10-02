@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ce que ton navigateur révèle · rhys.fr</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header><h1>Ce que ton navigateur révèle</h1><a href="/">← Accueil</a></header>
+  <section>
+    <p style="margin-top:0">Voici ce que <strong>n'importe quel site</strong> peut lire sans te demander quoi que ce soit. Rien n'est envoyé : tout est lu et affiché dans ton navigateur.</p>
+    <table id="t"></table>
+    <p class="note">Pris séparément, ces détails sont banals. Combinés, ils forment une « empreinte » souvent assez unique pour te reconnaître d'un site à l'autre, même sans cookies. Ce n'est qu'une partie de ce qui existe (il y a aussi le rendu canvas, les polices installées, etc.).</p>
+  </section>
+</main>
+<script>
+function gpu() {
+  try {
+    const gl = document.createElement("canvas").getContext("webgl");
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "masqué par le navigateur";
+  } catch (e) { return "indisponible"; }
+}
+const n = navigator;
+const rows = [
+  ["Navigateur (user-agent)", n.userAgent],
+  ["Langues préférées", (n.languages || [n.language]).join(", ")],
+  ["Fuseau horaire", Intl.DateTimeFormat().resolvedOptions().timeZone],
+  ["Écran", screen.width + " × " + screen.height + " px (profondeur " + screen.colorDepth + " bits)"],
+  ["Fenêtre", innerWidth + " × " + innerHeight + " px"],
+  ["Densité de pixels", String(devicePixelRatio)],
+  ["Plateforme", (n.userAgentData && n.userAgentData.platform) || n.platform || "inconnue"],
+  ["Cœurs du processeur", String(n.hardwareConcurrency || "inconnu")],
+  ["Mémoire (approx.)", n.deviceMemory ? n.deviceMemory + " Go" : "non communiquée"],
+  ["Écran tactile", n.maxTouchPoints > 0 ? "oui (" + n.maxTouchPoints + " points)" : "non"],
+  ["Thème préféré", matchMedia("(prefers-color-scheme: dark)").matches ? "sombre" : "clair"],
+  ["Mouvement réduit", matchMedia("(prefers-reduced-motion: reduce)").matches ? "demandé" : "non demandé"],
+  ["Cookies activés", n.cookieEnabled ? "oui" : "non"],
+  ["Signal « Ne pas me suivre »", n.doNotTrack === "1" ? "activé" : "non activé"],
+  ["Type de connexion", (n.connection && n.connection.effectiveType) || "non communiqué"],
+  ["Carte graphique (WebGL)", gpu()]
+];
+const t = document.getElementById("t");
+for (const [k, v] of rows) {
+  const tr = document.createElement("tr");
+  for (const x of [k, v]) { const td = document.createElement("td"); td.textContent = x; tr.appendChild(td); }
+  t.appendChild(tr);
+}
+</script>
+</body>
+</html>
