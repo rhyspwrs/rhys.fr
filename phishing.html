@@ -6,11 +6,25 @@
 <title>Quiz phishing · rhys.fr</title>
 <link rel="stylesheet" href="/style.css">
 <style>.msg{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;margin:.8rem 0;white-space:pre-wrap;overflow-wrap:anywhere}.meta{color:var(--muted);font-size:.9rem}</style>
+<link rel="icon" href="/favicon.png">
 </head>
 <body>
 <main>
-  <header><h1>Quiz phishing</h1><a href="/">← Accueil</a></header>
+  <header><a class="logo" href="/" aria-label="Accueil"><img src="/logo-r.png" alt="Rhys" width="44" height="44"></a><a href="/">← Accueil</a></header>
+  <h1>Quiz phishing</h1>
   <section>
+    <h2>Analyser un message suspect</h2>
+    <label class="l" for="an-text">Colle le message (SMS ou e-mail)</label>
+    <textarea id="an-text" placeholder="Colle ici le texte du message, avec les liens"></textarea>
+    <label class="l" for="an-from">Expéditeur (optionnel)</label>
+    <input type="text" id="an-from" autocomplete="off" placeholder="ex. service@exemple.com" style="width:100%;flex:none">
+    <p style="margin:1rem 0 0"><button type="button" id="an-go">Analyser</button></p>
+    <div class="result" id="an-res" hidden aria-live="polite"></div>
+    <p class="note">L'analyse se fait entièrement dans ton navigateur : rien n'est envoyé et aucun lien n'est ouvert. Elle cherche des indices (domaines suspects, urgence, demandes sensibles) sans prétendre être infaillible.</p>
+  </section>
+
+  <section>
+    <h2>Quiz : arnaque ou message légitime ?</h2>
     <div class="meta" id="count"></div>
     <div class="meta" id="from"></div>
     <div class="msg" id="body"></div>
@@ -67,6 +81,116 @@ $("next").addEventListener("click", () => {
   $("next").onclick = () => { i = 0; score = 0; $("next").onclick = null; location.reload(); };
 });
 show();
+</script>
+<script>
+const BRANDS = {
+  paypal: ["paypal.com"], amazon: ["amazon.fr", "amazon.com"], netflix: ["netflix.com"], apple: ["apple.com", "icloud.com"],
+  microsoft: ["microsoft.com", "live.com", "office.com"], google: ["google.com", "google.fr"], laposte: ["laposte.fr"],
+  colissimo: ["colissimo.fr", "laposte.fr"], chronopost: ["chronopost.fr"], impots: ["impots.gouv.fr"], ameli: ["ameli.fr"],
+  caf: ["caf.fr"], orange: ["orange.fr"], sfr: ["sfr.fr"], free: ["free.fr"], boursorama: ["boursorama.com"], vinted: ["vinted.fr", "vinted.com"]
+};
+const BAD_TLD = ["top", "xyz", "click", "live", "icu", "cfd", "sbs", "rest", "buzz", "monster", "cyou", "quest", "lol", "work", "support", "help"];
+const SHORT = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "is.gd", "cutt.ly", "rb.gy", "ow.ly", "shorturl.at", "tiny.cc"];
+const FREE = ["gmail.com", "outlook.com", "outlook.fr", "hotmail.com", "hotmail.fr", "yahoo.com", "yahoo.fr", "live.fr", "icloud.com", "proton.me", "protonmail.com"];
+const SLD = new Set(["co.uk", "gouv.fr", "com.fr", "asso.fr", "org.uk", "com.br", "com.au"]);
+const TEXT_RULES = [
+  [/urgent|immediatement|sous 24 ?h|sous 48 ?h|dernier (avis|rappel)|expire(ra)? (aujourd|demain|sous|dans [0-9]+ (heure|jour))|suspendu|bloque|action requise|dans les plus brefs delais|within 24|immediately|final notice|account (suspended|locked)/, 2, "Pression ou urgence (délai court, menace de blocage ou d'expiration)."],
+  [/mot de passe|identifiant|code (secret|de securite|confidentiel)|\brib\b|\biban\b|carte bancaire|numero de carte|cvv|cryptogramme|verifiez votre compte|confirmez vos informations|mettre a jour (vos|votre)|password|verify your|credentials/, 3, "Demande d'informations sensibles (mot de passe, code, RIB, carte bancaire, mise à jour de compte)."],
+  [/carte[s]? cadeau|bitcoin|crypto|western union|mandat|frais de (livraison|douane)|rembours|felicitations|vous avez gagne|loterie|heritage/, 2, "Argent ou gain : frais à payer, remboursement, cartes cadeaux, gain inattendu."],
+  [/poursuite|amende|huissier|gendarmerie|suppression de votre compte|fermeture de votre compte|tribunal/, 2, "Menace (amende, poursuites, suppression de compte)."],
+  [/cher client|chere cliente|cher utilisateur|dear (customer|user)/, 1, "Formule générique au lieu de ton nom."],
+  [/confidenti|ne (le )?dis (a personne|rien)|reste entre nous|je ne peux pas (t'|vous )?appeler/, 2, "Demande de discrétion ou d'éviter tout appel : typique de la fraude au président."]
+];
+
+function regDomain(host) {
+  const p = host.split(".");
+  return p.slice(SLD.has(p.slice(-2).join(".")) ? -3 : -2).join(".");
+}
+const official = (host, list) => list.some((d) => host === d || host.endsWith("." + d));
+const norm = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function analyzeText(text, sender) {
+  const f = [], urls = [];
+  const add = (pts, msg) => f.push({ pts, msg });
+  const nt = norm(text);
+
+  // --- liens
+  const found = new Set();
+  const re = /\b(?:https?:\/\/|www\.)[^\s<>"')]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:top|xyz|click|live|icu|cfd|sbs|rest|buzz)\b[^\s<>"')]*/gi;
+  for (const m of text.matchAll(re)) found.add(m[0].replace(/[.,;!?]+$/, ""));
+  const brandsInText = Object.keys(BRANDS).filter((b) => nt.includes(b));
+  let anyOfficial = false;
+  for (const raw of found) {
+    let u;
+    try { u = new URL(/^https?:\/\//i.test(raw) ? raw : "http://" + raw); } catch (e) { continue; }
+    const host = u.hostname.toLowerCase(), reg = regDomain(host), tld = host.split(".").pop();
+    urls.push({ raw, host, reg });
+    const here = (pts, msg) => add(pts, "Lien « " + host + " » : " + msg);
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) here(3, "adresse IP au lieu d'un nom de domaine.");
+    if (host.includes("xn--")) here(3, "nom de domaine en punycode (peut imiter des lettres connues).");
+    if (/^https?:\/\/[^/]*@/i.test(raw)) here(3, "contient un « @ » : ce qui précède n'est pas le vrai site.");
+    if (/^http:\/\//i.test(raw)) here(1, "pas de HTTPS.");
+    if (SHORT.includes(host)) here(2, "lien raccourci, impossible de voir la vraie destination.");
+    if (BAD_TLD.includes(tld)) here(2, "extension « ." + tld + " » très utilisée pour les arnaques.");
+    if (host.split(".").length >= 5) here(1, "beaucoup de sous-domaines, un procédé pour noyer le vrai domaine.");
+    if ((host.match(/-/g) || []).length >= 2) here(1, "plusieurs tirets dans le nom de domaine.");
+    if (raw.length > 100) here(1, "adresse anormalement longue.");
+    let flagged = false;
+    for (const [b, doms] of Object.entries(BRANDS)) {
+      if (official(host, doms)) anyOfficial = true;
+      else if (host.includes(b)) { here(3, "imite « " + b + " » mais le vrai domaine est « " + reg + " »."); flagged = true; }
+    }
+    if (!flagged && /secure|login|verify|update|suivi|colis|compte|paiement|support/.test(host)) here(1, "mot-clé « rassurant » dans le nom de domaine.");
+  }
+  if (found.size && brandsInText.length && !anyOfficial) add(2, "Le message cite « " + brandsInText[0] + " » mais aucun lien ne mène vers un site officiel connu.");
+
+  // --- texte
+  for (const [rx, pts, msg] of TEXT_RULES) if (rx.test(nt)) add(pts, msg);
+  if (/piece jointe|ci-joint|attachment/.test(nt) && /\.(zip|exe|scr|iso|html?|js|vbs|rar)\b/.test(nt)) add(2, "Pièce jointe à risque (.zip, .exe, .html…).");
+
+  // --- expéditeur
+  const s = (sender || "").trim();
+  if (s) {
+    const ns = norm(s), dom = (ns.match(/@([a-z0-9.-]+\.[a-z]{2,})/) || [])[1] || "";
+    for (const [b, doms] of Object.entries(BRANDS)) {
+      if (ns.includes(b) && !(dom && official(dom, doms))) { add(3, "L'expéditeur se présente comme « " + b + " » mais son adresse est « " + (dom || s) + " »."); break; }
+    }
+    if (dom && FREE.includes(dom) && brandsInText.length) add(2, "Message d'une entreprise envoyé depuis une adresse gratuite (" + dom + ").");
+    if (dom && BAD_TLD.includes(dom.split(".").pop())) add(2, "Extension de l'adresse expéditrice suspecte (." + dom.split(".").pop() + ").");
+  }
+  const score = f.reduce((n, x) => n + x.pts, 0);
+  return { score, findings: f, urls };
+}
+
+(function () {
+  const g = (id) => document.getElementById(id);
+  if (!g("an-go")) return;
+  g("an-go").addEventListener("click", () => {
+    const text = g("an-text").value.trim();
+    const out = g("an-res");
+    out.hidden = false;
+    out.textContent = "";
+    if (!text) { out.textContent = "Colle d'abord le message à analyser."; return; }
+    const r = analyzeText(text, g("an-from").value);
+    const v = r.score >= 7 ? "🔴 Très probablement une arnaque" : r.score >= 4 ? "🟠 Suspect" : r.score >= 1 ? "🟡 Quelques signaux d'alerte" : "⚪ Aucun signal détecté";
+    const h = document.createElement("strong"); h.textContent = v + " (score " + r.score + ")"; out.appendChild(h);
+    if (r.findings.length) {
+      const ul = document.createElement("ul"); ul.className = "f";
+      for (const x of r.findings) { const li = document.createElement("li"); li.textContent = x.msg; ul.appendChild(li); }
+      out.appendChild(ul);
+    }
+    if (r.urls.length) {
+      const p = document.createElement("p"); p.className = "note";
+      p.textContent = "Domaines trouvés (le vrai site est la fin du nom, juste avant le premier « / ») : " + r.urls.map((u) => u.reg).join(", ");
+      out.appendChild(p);
+    }
+    const n = document.createElement("p"); n.className = "note";
+    n.textContent = r.score >= 4
+      ? "Ne clique sur rien et ne réponds pas. Tu peux signaler : 33700 (SMS et appels), signal-spam.fr (e-mails). Si tu as déjà saisi des informations, change tes mots de passe et préviens ta banque ; cybermalveillance.gouv.fr peut t'aider."
+      : "Cette analyse repose sur des indices simples : l'absence de signal ne garantit pas que le message est sûr. En cas de doute, passe par le site officiel en tapant l'adresse toi-même.";
+    out.appendChild(n);
+  });
+})();
 </script>
 </body>
 </html>

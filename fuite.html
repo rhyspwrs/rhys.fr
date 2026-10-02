@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vérifier une fuite · rhys.fr</title>
 <link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/favicon.png">
 </head>
 <body>
 <main>
-  <header><h1>Vérifier une fuite</h1><a href="/">← Accueil</a></header>
+  <header><a class="logo" href="/" aria-label="Accueil"><img src="/logo-r.png" alt="Rhys" width="44" height="44"></a><a href="/">← Accueil</a></header>
+  <h1>Vérifier une fuite</h1>
   <section>
     <h2>Ce mot de passe a-t-il déjà fuité ?</h2>
     <div class="row">
@@ -18,6 +20,7 @@
     <div class="result" id="res" hidden aria-live="polite"></div>
     <p class="note">Ton mot de passe n'est jamais envoyé. Ton navigateur calcule son empreinte SHA-1 et n'envoie que les 5 premiers caractères à l'API Have I Been Pwned, qui renvoie toutes les empreintes commençant pareil. La comparaison se fait ensuite chez toi (principe de k-anonymat).</p>
     <p class="note">Même ainsi, évite de saisir un mot de passe que tu utilises vraiment.</p>
+    <p class="note"><strong>Source :</strong> base « Pwned Passwords » du service <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener noreferrer">Have I Been Pwned</a>, créé par Troy Hunt, qui regroupe des mots de passe issus de fuites de données publiques. <a href="https://haveibeenpwned.com/API/v3#PwnedPasswords" target="_blank" rel="noopener noreferrer">Documentation de l'API</a>.</p>
   </section>
 </main>
 <script>
@@ -40,8 +43,8 @@ async function check() {
     const line = (await r.text()).split("\n").map((l) => l.trim().split(":")).find((p) => p[0] === h.slice(5));
     const n = line ? parseInt(line[1], 10) : 0;
     res.textContent = n > 0
-      ? "⚠️ Ce mot de passe apparaît " + n.toLocaleString("fr-FR") + " fois dans des fuites connues. Ne l'utilise pas (ou plus)."
-      : "✅ Absent des fuites connues. Ça ne veut pas dire qu'il est fort : vérifie aussi sa longueur et son unicité.";
+      ? "⚠️ Ce mot de passe apparaît " + n.toLocaleString("fr-FR") + " fois dans des fuites connues. Ne l'utilise pas (ou plus). Source : Have I Been Pwned."
+      : "✅ Absent des fuites connues. Ça ne veut pas dire qu'il est fort : vérifie aussi sa longueur et son unicité. Source : Have I Been Pwned.";
   } catch (e) {
     res.textContent = "Impossible de contacter le service (" + e.message + "). Réessaie plus tard.";
   }
