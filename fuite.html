@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vérifier une fuite · rhys.fr</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+  <header><h1>Vérifier une fuite</h1><a href="/">← Accueil</a></header>
+  <section>
+    <h2>Ce mot de passe a-t-il déjà fuité ?</h2>
+    <div class="row">
+      <input type="password" id="pw" autocomplete="off" placeholder="Mot de passe à vérifier" aria-label="Mot de passe à vérifier">
+      <button id="go" type="button">Vérifier</button>
+    </div>
+    <div class="result" id="res" hidden aria-live="polite"></div>
+    <p class="note">Ton mot de passe n'est jamais envoyé. Ton navigateur calcule son empreinte SHA-1 et n'envoie que les 5 premiers caractères à l'API Have I Been Pwned, qui renvoie toutes les empreintes commençant pareil. La comparaison se fait ensuite chez toi (principe de k-anonymat).</p>
+    <p class="note">Même ainsi, évite de saisir un mot de passe que tu utilises vraiment.</p>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+async function sha1(t) {
+  const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+async function check() {
+  const pw = $("pw").value;
+  const res = $("res");
+  if (!pw) return;
+  res.hidden = false;
+  res.textContent = "Vérification…";
+  $("go").disabled = true;
+  try {
+    const h = await sha1(pw);
+    const r = await fetch("https://api.pwnedpasswords.com/range/" + h.slice(0, 5), { headers: { "Add-Padding": "true" } });
+    if (!r.ok) throw new Error("Réponse " + r.status);
+    const line = (await r.text()).split("\n").map((l) => l.trim().split(":")).find((p) => p[0] === h.slice(5));
+    const n = line ? parseInt(line[1], 10) : 0;
+    res.textContent = n > 0
+      ? "⚠️ Ce mot de passe apparaît " + n.toLocaleString("fr-FR") + " fois dans des fuites connues. Ne l'utilise pas (ou plus)."
+      : "✅ Absent des fuites connues. Ça ne veut pas dire qu'il est fort : vérifie aussi sa longueur et son unicité.";
+  } catch (e) {
+    res.textContent = "Impossible de contacter le service (" + e.message + "). Réessaie plus tard.";
+  }
+  $("go").disabled = false;
+}
+$("go").addEventListener("click", check);
+$("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+</script>
+</body>
+</html>
