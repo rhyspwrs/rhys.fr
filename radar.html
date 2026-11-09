@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar des fuites · rhys.fr</title>
+<meta name="description" content="Le suivi des fuites de données en France, avec les sources officielles.">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.8rem;margin-bottom:1rem}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;animation:rise .6s both}
+  .stat b{display:block;font-size:1.7rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .stat span{color:var(--muted);font-size:.85rem}
+  .ctl{display:flex;flex-wrap:wrap;gap:.5rem;margin:.8rem 0 0}
+  .chip{background:transparent;color:var(--link);border:1px solid var(--line);padding:.3rem .8rem;border-radius:999px;font-size:.9rem}
+  .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .months{display:grid;gap:.35rem;margin-top:.8rem}
+  .m{display:grid;grid-template-columns:7rem 1fr 1.6rem;align-items:center;gap:.6rem;font-size:.85rem;color:var(--muted)}
+  .m i{display:block;height:.6rem;border-radius:4px;background:var(--accent);width:0;transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .e{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.8rem;animation:rise .55s both}
+  .e h3{margin:0;font-size:1.05rem}
+  .e .top{display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:baseline}
+  .e time,.e .sc{color:var(--muted);font-size:.88rem}
+  .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin:.6rem 0 0;padding:0;list-style:none}
+  .tags li{font-size:.78rem;padding:.12rem .6rem;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .tags li.s{border-color:var(--accent);color:var(--ink);font-weight:600}
+  .src{margin:.6rem 0 0;font-size:.85rem}
+  .badge{font-size:.75rem;border:1px solid var(--line);border-radius:6px;padding:.05rem .45rem;color:var(--muted)}
+  details{margin-top:1rem}summary{cursor:pointer;font-weight:600}
+  details ul{padding-left:1.2rem}details li{margin:.4rem 0}
+  #none{color:var(--muted);text-align:center;padding:1.5rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="logo" href="/" aria-label="Accueil"><picture><source srcset="/logo-r-dark.png" media="(prefers-color-scheme: dark)"><img src="/logo-r.png" alt="Rhys" width="44" height="44"></picture></a>
+    <a href="/">← Accueil</a>
+  </header>
+  <h1>Radar des fuites</h1>
+  <p class="note" style="margin:-.4rem 0 1rem">Qui a fuité en France, quand, et quelles données sont concernées. Chaque fiche cite sa source.</p>
+
+  <div class="stats">
+    <div class="stat"><b id="s1">0</b><span>fuites recensées</span></div>
+    <div class="stat" style="animation-delay:.08s"><b id="s2">0</b><span>avec données sensibles</span></div>
+    <div class="stat" style="animation-delay:.16s"><b id="s3">–</b><span>dernière mise à jour</span></div>
+  </div>
+
+  <section>
+    <input type="text" id="q" placeholder="Rechercher une organisation…" aria-label="Rechercher une organisation" autocomplete="off" style="width:100%;flex:none">
+    <div class="ctl" id="sect" role="group" aria-label="Filtrer par secteur"></div>
+    <div class="ctl"><button class="chip" id="sens" type="button" aria-pressed="false">⚠ Données sensibles uniquement</button></div>
+    <div class="months" id="months" aria-label="Fuites par mois"></div>
+  </section>
+
+  <div id="list" aria-live="polite"></div>
+  <p id="none" hidden>Aucune fuite ne correspond à ta recherche.</p>
+
+  <section>
+    <details>
+      <summary>Tu es concerné ? Les bons réflexes</summary>
+      <ul>
+        <li>Change le mot de passe du compte touché, et partout où tu l'as réutilisé (<a href="/phrase-de-passe.html">phrase de passe</a>, <a href="/motdepasse.html">générateur</a>).</li>
+        <li>Active la double authentification quand elle existe.</li>
+        <li>Vérifie si un de tes mots de passe a déjà fuité : <a href="/fuite.html">vérificateur</a>.</li>
+        <li>Méfie-toi des messages qui suivent une fuite : les arnaques en profitent. Teste-les avec l'<a href="/phishing.html">analyseur de phishing</a>.</li>
+        <li>Si un IBAN ou une pièce d'identité est concerné, surveille tes comptes et préviens ta banque.</li>
+        <li>Pour être aidé : <a href="https://www.cybermalveillance.gouv.fr/" target="_blank" rel="noopener noreferrer">cybermalveillance.gouv.fr</a>. Pour contester un traitement de tes données : <a href="https://www.cnil.fr/" target="_blank" rel="noopener noreferrer">CNIL</a>.</li>
+      </ul>
+    </details>
+    <p class="note">Liste non exhaustive, établie à partir de communiqués officiels et d'articles de presse cités sur chaque fiche. Une erreur ou une fuite à signaler ? <a href="mailto:rhys@rhys.fr">rhys@rhys.fr</a>. Inspiré par le travail de Bonjour la fuite.</p>
+  </section>
+</main>
+<script src="/radar-data.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const SENS = new Set(["IBAN", "Numéro de sécurité sociale", "Données de santé", "Pièce d'identité", "Mot de passe", "Données bancaires", "Identifiant fiscal"]);
+const D = (window.FUITES || []).map((x) => ({ ...x, sensible: x.donnees.some((t) => SENS.has(t)) })).sort((a, b) => b.date.localeCompare(a.date));
+const fmt = (d) => { const [y, m, j] = d.split("-"); return (+j) + " " + MOIS[m - 1] + " " + y; };
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let sect = "", sens = false, q = "";
+
+function count(el, to) {
+  if (reduce || !to) { el.textContent = to; return; }
+  const t0 = performance.now();
+  (function f(t) { const p = Math.min(1, (t - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(f); })(t0);
+}
+function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+function render() {
+  const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const L = D.filter((x) => (!sect || x.secteur === sect) && (!sens || x.sensible) && (!q || norm(x.nom).includes(norm(q))));
+  const list = $("list"); list.textContent = "";
+  L.forEach((x, i) => {
+    const a = el("article", "e"); a.style.animationDelay = Math.min(i, 8) * 55 + "ms";
+    const top = el("div", "top"); top.appendChild(el("h3", "", x.nom));
+    const t = el("time", "", fmt(x.date)); t.dateTime = x.date; top.appendChild(t); a.appendChild(top);
+    const meta = el("p", "sc"); meta.style.margin = ".25rem 0 0";
+    meta.append(el("span", "badge", "✔ Confirmée"), " " + x.secteur + (x.ampleur ? " · " + x.ampleur : ""));
+    a.appendChild(meta);
+    const ul = el("ul", "tags");
+    if (!x.donnees.length) ul.appendChild(el("li", "", "Données non détaillées"));
+    x.donnees.forEach((d) => ul.appendChild(el("li", SENS.has(d) ? "s" : "", (SENS.has(d) ? "⚠ " : "") + d)));
+    a.appendChild(ul);
+    const s = el("p", "src", "Source : ");
+    x.sources.forEach((r, k) => { if (k) s.append(" · "); const l = el("a", "", r.t); l.href = r.u; l.target = "_blank"; l.rel = "noopener noreferrer"; s.appendChild(l); });
+    a.appendChild(s); list.appendChild(a);
+  });
+  $("none").hidden = L.length > 0;
+  // fuites par mois
+  const by = {}; L.forEach((x) => { const k = x.date.slice(0, 7); by[k] = (by[k] || 0) + 1; });
+  const ks = Object.keys(by).sort().reverse(), max = Math.max(1, ...Object.values(by));
+  const mo = $("months"); mo.textContent = "";
+  ks.forEach((k) => { const r = el("div", "m"); r.appendChild(el("span", "", MOIS[+k.slice(5) - 1] + " " + k.slice(2, 4))); const bar = el("i"); r.appendChild(bar); r.appendChild(el("span", "", by[k])); mo.appendChild(r); requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = (by[k] / max * 100) + "%"; })); });
+}
+
+// filtres
+const chips = ["Tous", ...[...new Set(D.map((x) => x.secteur))].sort()];
+chips.forEach((c) => { const b = el("button", "chip", c); b.type = "button"; b.setAttribute("aria-pressed", c === "Tous"); b.onclick = () => { sect = c === "Tous" ? "" : c; [...$("sect").children].forEach((x) => x.setAttribute("aria-pressed", x === b)); render(); }; $("sect").appendChild(b); });
+$("sens").onclick = (e) => { sens = !sens; e.currentTarget.setAttribute("aria-pressed", sens); render(); };
+$("q").oninput = (e) => { q = e.target.value.trim(); render(); };
+
+count($("s1"), D.length); count($("s2"), D.filter((x) => x.sensible).length);
+$("s3").textContent = D.length ? fmt(D[0].date) : "–"; $("s3").style.fontSize = "1.05rem";
+render();
+</script>
+</body>
+</html>

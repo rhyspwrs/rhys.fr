@@ -1,0 +1,42 @@
+/* Données du Radar des fuites.
+   Pour ajouter une fuite : copie un bloc ci-dessous et remplis-le, puis renvoie ce fichier sur GitHub.
+   date : AAAA-MM-JJ · secteur : texte libre (sert aux filtres) · ampleur : chiffre annoncé dans la source (ou "")
+   donnees : types de données concernées · sources : au moins une source officielle ou de presse */
+window.FUITES = [
+  { nom: "DGFiP — fichier FICOBA", date: "2026-02-18", secteur: "Public", ampleur: "1,2 million de comptes", donnees: ["Identité", "Adresse postale", "Identifiant fiscal", "IBAN"],
+    sources: [{ t: "Communiqué du ministère de l'Économie", u: "https://presse.economie.gouv.fr/acces-illegitimes-au-fichier-national-des-comptes-bancaires-ficoba/" }, { t: "Le Monde Informatique", u: "https://www.lemondeinformatique.fr/actualites/lire-bercy-alerte-sur-le-piratage-du-fichier-national-des-comptes-bancaires-99401.html" }] },
+  { nom: "DGFiP — accès illégitime au système d'information", date: "2026-06-30", secteur: "Public", ampleur: "", donnees: ["Identité", "Adresse postale", "E-mail", "Téléphone", "Situation familiale", "Revenu fiscal de référence"],
+    sources: [{ t: "Communiqué du ministère de l'Économie", u: "https://presse.economie.gouv.fr/acces-illegitime-au-systeme-dinformation-de-la-direction-generale-des-finances-publiques/" }] },
+  { nom: "Cegedim", date: "2026-02-27", secteur: "Santé", ampleur: "11 à 15 millions de patients", donnees: ["Identité", "Contact", "Données de santé"],
+    sources: [{ t: "Communiqué de Cegedim (PDF)", u: "https://www.cegedim.fr/Communique/Cegedim_Communique26022026.pdf" }, { t: "franceinfo", u: "https://www.franceinfo.fr/sante/enquete-francetv-une-fuite-massive-de-donnees-medicales-inquiete-en-france_7831823.html" }] },
+  { nom: "Éducation nationale — personnels", date: "2026-03-24", secteur: "Éducation", ampleur: "243 000 agents", donnees: ["Identité", "Adresse postale", "Téléphone", "Périodes d'absence"],
+    sources: [{ t: "education.gouv.fr", u: "https://www.education.gouv.fr/incident-de-securite-affectant-les-donnees-de-certains-personnels-de-l-education-nationale-470657" }] },
+  { nom: "CROUS — mesrdv-etudiant", date: "2026-03-24", secteur: "Éducation", ampleur: "774 000 personnes", donnees: ["Identité", "E-mail", "Objet des rendez-vous", "Pièces jointes"],
+    sources: [{ t: "Communiqué des CROUS", u: "https://www.lescrous.fr/2026/03/exfiltration-de-donnees-provenant-du-site-mesrdv-etudiant-gouv-fr/" }] },
+  { nom: "ÉduConnect", date: "2026-04-14", secteur: "Éducation", ampleur: "", donnees: ["Identité", "Identifiant", "Établissement et classe", "E-mail", "Code d'activation"],
+    sources: [{ t: "education.gouv.fr", u: "https://www.education.gouv.fr/incident-de-securite-affectant-les-donnees-de-certains-eleves-de-l-education-nationale-504443" }] },
+  { nom: "Parcoursup", date: "2026-04-23", secteur: "Éducation", ampleur: "", donnees: ["Identité", "Date de naissance", "Adresse postale", "E-mail", "Téléphone", "Scolarité"],
+    sources: [{ t: "Ministère de l'Enseignement supérieur", u: "https://www.enseignementsup-recherche.gouv.fr/fr/incident-de-securite-affectant-les-donnees-de-certains-candidats-des-sessions-parcoursup-2023-et-101350" }] },
+  { nom: "Office français de la biodiversité — permis de chasser", date: "2026-02-07", secteur: "Public", ampleur: "", donnees: ["Identité", "Date de naissance", "Adresse postale", "Téléphone", "E-mail", "Nationalité"],
+    sources: [{ t: "ofb.gouv.fr", u: "https://ofb.gouv.fr/actualites/cyberattaque-visant-application-du-permis-de-chasser-ofb-informe-ses-usagers" }] },
+  { nom: "Commission européenne", date: "2026-02-09", secteur: "Institutions", ampleur: "", donnees: ["Identité", "Téléphone"],
+    sources: [{ t: "Communiqué de la Commission", u: "https://ec.europa.eu/commission/presscorner/detail/fr/ip_26_342" }] },
+  { nom: "INSEE", date: "2026-06-26", secteur: "Public", ampleur: "13 000 agents", donnees: [],
+    sources: [{ t: "insee.fr", u: "https://www.insee.fr/fr/information/9016741" }] },
+  { nom: "Fédération Française de Basketball", date: "2026-05-03", secteur: "Sport", ampleur: "", donnees: ["Identité", "Date de naissance", "Adresse postale", "E-mail", "Téléphone", "Numéro de licence"],
+    sources: [{ t: "ffbb.com", u: "https://www.ffbb.com/actualites/la-ffbb-informe-dun-acces-non-autorise-a-ses-donnees-licencies" }] },
+  { nom: "Pierre & Vacances Center Parcs", date: "2026-05-15", secteur: "Tourisme", ampleur: "1,6 million de réservations", donnees: ["Identité", "Téléphone", "Date de naissance", "Réservations"],
+    sources: [{ t: "Le Monde", u: "https://www.lemonde.fr/pixels/article/2026/05/15/fuite-de-donnees-chez-pierre-et-vacances-center-parcs-1-6-million-de-reservations-concernees_6689486_4408996.html" }] },
+  { nom: "Atol", date: "2026-05-22", secteur: "Commerce", ampleur: "5,9 millions de clients", donnees: ["Identité", "Date de naissance", "E-mail", "Téléphone", "Adresse postale"],
+    sources: [{ t: "cyberattaque.org", u: "https://www.cyberattaque.org/atol-mon-opticien-59-millions-de-clients-exposes-dans-une-fuite-massive-de-donnees/" }] },
+  { nom: "Bloctel", date: "2026-08-07", secteur: "Public", ampleur: "jusqu'à 3 millions de numéros", donnees: ["Téléphone"],
+    sources: [{ t: "Univers Freebox", u: "https://www.universfreebox.com/article/596529/piratage-de-bloctel-juste-avant-son-arret-jusqua-3-millions-de-numeros-de-telephone-auraient-fuite" }] },
+  { nom: "Santé publique France (prestataire)", date: "2026-08-13", secteur: "Santé", ampleur: "80 000 personnes", donnees: ["E-mail", "Adresse postale", "Téléphone"],
+    sources: [{ t: "franceinfo", u: "https://www.franceinfo.fr/internet/securite-sur-internet/cyberattaques/un-prestataire-de-sante-publique-france-victime-d-une-cyberattaque-pres-de-80-000-donnees-de-contact-concernees_8146196.html" }] },
+  { nom: "Mutuelle Générale de Prévoyance", date: "2026-08-18", secteur: "Assurance", ampleur: "", donnees: ["Identité", "Contact", "IBAN"],
+    sources: [{ t: "franceinfo", u: "https://www.franceinfo.fr/internet/securite-sur-internet/cyberattaques/des-donnees-personnelles-et-des-iban-d-adherents-de-la-mutuelle-generale-de-prevoyance-extraits-lors-d-une-cyberattaque-une-enquete-ouverte_8152268.html" }] },
+  { nom: "Tisséo", date: "2026-09-04", secteur: "Transport", ampleur: "2 877 personnes", donnees: [],
+    sources: [{ t: "La Dépêche", u: "https://www.ladepeche.fr/2026/09/04/cyberattaque-dampleur-a-toulouse-des-donnees-sensibles-de-tisseo-concernant-pres-de-3-000-personnes-ont-fuite-une-plainte-deposee-13535414.php" }] },
+  { nom: "Éducation nationale — personnels (2e incident)", date: "2026-07-31", secteur: "Éducation", ampleur: "", donnees: ["Identité", "Adresse postale", "Téléphone", "Numéro de sécurité sociale"],
+    sources: [{ t: "education.gouv.fr", u: "https://www.education.gouv.fr/incident-de-securite-affectant-les-donnees-de-personnels-de-l-education-nationale-505407" }] }
+];
