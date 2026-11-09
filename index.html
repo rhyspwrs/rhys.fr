@@ -4,119 +4,202 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rhys · rhys.fr</title>
-  <meta name="description" content="Projets et expérimentations.">
+  <meta name="description" content="Projets, outils et expérimentations.">
   <meta property="og:title" content="Rhys · rhys.fr">
-  <meta property="og:description" content="Projets et expérimentations.">
+  <meta property="og:description" content="Projets, outils et expérimentations.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://rhys.fr/logo-card.png">
   <link rel="icon" href="/favicon.png">
   <style>
     :root {
-      --bg: #f6f4f0;
-      --panel: #ffffff;
-      --ink: #1c2020;
-      --muted: #5f6663;
-      --accent: #e8962e; --accent-ink: #1c2020; --link: #a85a00;
-      --line: #e3ded5;
+      --bg: #f6f4f0; --panel: #ffffff; --ink: #1c2020; --muted: #5f6663;
+      --accent: #e8962e; --accent-ink: #1c2020; --link: #a85a00; --line: #e3ded5;
+      --blob: .30; --shadow: 0 10px 30px rgba(28,32,32,.10);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #141717;
-        --panel: #1d2121;
-        --ink: #f1ede6;
-        --muted: #9aa19e;
-        --accent: #ec9a2e; --accent-ink: #141717; --link: #f0a94a;
-        --line: #2e3333;
+        --bg: #141717; --panel: #1d2121; --ink: #f1ede6; --muted: #9aa19e;
+        --accent: #ec9a2e; --accent-ink: #141717; --link: #f0a94a; --line: #2e3333;
+        --blob: .20; --shadow: 0 10px 30px rgba(0,0,0,.45);
       }
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
-      line-height: 1.6;
+      margin: 0; background: var(--bg); color: var(--ink); overflow-x: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; line-height: 1.55;
     }
-    main { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem 3rem; }
-    h1 {
-      font-size: clamp(2.6rem, 9vw, 4.5rem);
-      line-height: 1;
-      letter-spacing: -0.03em;
-      margin: 0 0 0.8rem;
-    }
-    h1 span { color: var(--accent); }
-    .role { font-size: 1.2rem; color: var(--muted); margin: 0 0 2rem; }
-    h2 {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin: 2.5rem 0 0.8rem;
-    }
-    p { margin: 0 0 1rem; }
     a { color: var(--link); }
-    a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 3px; }
-    .cards { display: grid; gap: 0.8rem; }
-    .card {
-      display: block;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 1rem 1.1rem;
-      text-decoration: none;
-      color: var(--ink);
+    a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 6px; }
+    .sr { position: absolute; left: -9999px; }
+
+    /* Fond animé */
+    .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .bg i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: var(--blob); animation: drift 24s ease-in-out infinite alternate; }
+    .b1 { width: 34rem; height: 34rem; background: #e8962e; top: -10rem; left: -9rem; }
+    .b2 { width: 28rem; height: 28rem; background: #f5c26b; top: 32%; right: -11rem; animation-duration: 30s; animation-delay: -7s; }
+    .b3 { width: 26rem; height: 26rem; background: #c2410c; bottom: -9rem; left: 25%; opacity: calc(var(--blob) * .6); animation-duration: 34s; animation-delay: -13s; }
+    @keyframes drift { to { transform: translate(4rem, 3rem) scale(1.18); } }
+    .spot {
+      position: fixed; top: 0; left: 0; width: 600px; height: 600px; z-index: -1; pointer-events: none;
+      transform: translate(-9999px, -9999px); will-change: transform;
+      background: radial-gradient(circle, rgba(232,150,46,.16), transparent 60%);
     }
-    .card:hover { border-color: var(--accent); }
-    .card strong { display: block; }
-    .card small { color: var(--muted); font-size: 0.95rem; }
-    ul { margin: 0; padding-left: 1.2rem; }
-    li { margin-bottom: 0.3rem; }
-    footer { margin-top: 3rem; color: var(--muted); font-size: 0.9rem; }
-  .logo{display:inline-flex;line-height:0}
-.logo img{width:44px;height:44px;display:block}
-.logo.big{margin-bottom:1.5rem}
-.logo.big img{width:104px;height:104px}
-.sr{position:absolute;left:-9999px}
+
+    main { max-width: 56rem; margin: 0 auto; padding: 3.5rem 1.4rem 3rem; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 1rem 0 3rem; }
+    .logo { display: inline-flex; line-height: 0; position: relative; }
+    .logo.big { animation: pop 1s cubic-bezier(.2,1.4,.4,1) both; }
+    .logo.big::before {
+      content: ""; position: absolute; inset: -22%; border-radius: 50%; z-index: -1;
+      background: radial-gradient(circle, rgba(232,150,46,.45), transparent 65%); animation: pulse 4.5s ease-in-out infinite;
+    }
+    .logo.big picture { display: block; animation: bob 7s ease-in-out 1.2s infinite; }
+    .logo.big img { width: 132px; height: 132px; display: block; }
+    @keyframes pop { from { opacity: 0; transform: scale(.55) rotate(-10deg); } to { opacity: 1; transform: none; } }
+    @keyframes bob { 50% { transform: translateY(-9px) rotate(1.5deg); } }
+    @keyframes pulse { 50% { transform: scale(1.12); opacity: .65; } }
+    .tag { margin: 1.6rem 0 0; font-size: clamp(1.15rem, 3.2vw, 1.5rem); color: var(--muted); animation: up .8s .45s both; }
+    .tag b { color: var(--ink); font-weight: 600; }
+    .stats { display: flex; justify-content: center; flex-wrap: wrap; gap: .7rem; margin-top: 1.8rem; }
+    .stats span {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: .4rem 1rem; font-size: .95rem; color: var(--muted);
+    }
+    .stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    /* Sections */
+    .sec { display: flex; align-items: center; gap: .8rem; margin: 2.5rem 0 1.1rem; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .sec::after { content: ""; height: 2px; width: 0; background: var(--accent); border-radius: 2px; transition: width .9s .2s cubic-bezier(.2,.7,.2,1); }
+    .sec.in::after { width: 3rem; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+
+    /* Cartes */
+    .card {
+      position: relative; display: flex; flex-direction: column; gap: .35rem; overflow: hidden;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem 1.2rem 1.1rem;
+      color: var(--ink); text-decoration: none;
+      transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .card::before {
+      content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .3s; pointer-events: none;
+      background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(232,150,46,.22), transparent 70%);
+    }
+    .card:hover, .card:focus-visible { border-color: var(--accent); box-shadow: var(--shadow); }
+    .card:hover::before { opacity: 1; }
+    .card .n { font: .8rem ui-monospace, Consolas, monospace; color: var(--link); letter-spacing: .08em; }
+    .card strong { font-size: 1.15rem; letter-spacing: -.01em; }
+    .card small { color: var(--muted); font-size: .95rem; line-height: 1.5; flex: 1; }
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+    .chips em { font-style: normal; font-size: .75rem; padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .go { position: absolute; top: 1rem; right: 1.1rem; font-size: 1.2rem; color: var(--link); transition: transform .25s ease; }
+    .card:hover .go { transform: translateX(5px); }
+    .card.ext .go { transition: transform .25s ease; }
+    .card.ext:hover .go { transform: translate(4px, -4px); }
+
+    /* Apparition au scroll */
+    .reveal { opacity: 0; }
+    .reveal.in { animation: up .75s cubic-bezier(.2,.7,.2,1) var(--d, 0ms) both; }
+    @keyframes up { from { opacity: 0; translate: 0 26px; } to { opacity: 1; translate: 0 0; } }
+
+    .contact { text-align: center; margin-top: 3.5rem; }
+    .btn {
+      display: inline-block; background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 600;
+      padding: .75rem 1.6rem; border-radius: 999px; transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(232,150,46,.35); color: var(--accent-ink); }
+    .btn:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+    footer { text-align: center; margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; }
+      .sec::after { width: 3rem; }
+    }
   </style>
 </head>
 <body>
+  <div class="bg" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+  <div class="spot" aria-hidden="true"></div>
+
   <main>
-    <a class="logo big" href="/" aria-label="Rhys"><picture><source srcset="/logo-r-dark.png" media="(prefers-color-scheme: dark)"><img src="/logo-r.png" alt="" width="104" height="104"></picture></a>
-    <h1 class="sr">Rhys</h1>
+    <header class="hero">
+      <a class="logo big" href="/" aria-label="Rhys"><picture><source srcset="/logo-r-dark.png" media="(prefers-color-scheme: dark)"><img src="/logo-r.png" alt="" width="132" height="132"></picture></a>
+      <h1 class="sr">Rhys</h1>
+      <p class="tag">Projets, outils et <b>expérimentations</b>.</p>
+      <div class="stats reveal">
+        <span><b data-count="auto">0</b> projets</span>
+        <span><b data-count="0">0</b> cookie</span>
+        <span><b data-count="100">0</b> % dans ton navigateur</span>
+      </div>
+    </header>
 
-
-    <h2>Projets</h2>
-    <div class="cards">
-      <a class="card" href="/perplex.html">
-        <strong>perplex</strong>
-        <small>Un chat IA qui tourne entièrement dans ton navigateur, sans serveur.</small>
-      </a>
-      <a class="card" href="/motdepasse.html">
-        <strong>Mots de passe</strong>
-        <small>Générateur et testeur de mots de passe, 100 % dans le navigateur.</small>
-      </a>
-      <a class="card" href="/fuite.html">
-        <strong>Vérifier une fuite</strong>
-        <small>Ce mot de passe est-il déjà dans une fuite de données ?</small>
-      </a>
-      <a class="card" href="/phrase-de-passe.html">
-        <strong>Phrase de passe</strong>
-        <small>Un générateur de mots de passe faciles à retenir.</small>
-      </a>
-      <a class="card" href="/navigateur.html">
-        <strong>Ce que ton navigateur révèle</strong>
-        <small>Ce que n'importe quel site peut lire sur toi.</small>
-      </a>
-      <a class="card" href="/phishing.html">
-        <strong>Quiz phishing</strong>
-        <small>Arnaque ou message légitime ? À toi de juger.</small>
-      </a>
+    <h2 class="sec reveal">Projets</h2>
+    <div class="grid">
+      <a class="card reveal" href="/perplex.html"><span class="n">01</span><strong>perplex</strong><small>Un chat IA qui tourne entièrement dans ton navigateur, sans serveur.</small><span class="chips"><em>IA locale</em><em>WebGPU</em></span><span class="go" aria-hidden="true">→</span></a>
+      <a class="card reveal" href="/motdepasse.html"><span class="n">02</span><strong>Mots de passe</strong><small>Générateur et testeur, avec le temps qu'il faudrait pour les casser.</small><span class="chips"><em>Sécurité</em><em>Outil</em></span><span class="go" aria-hidden="true">→</span></a>
+      <a class="card reveal" href="/fuite.html"><span class="n">03</span><strong>Vérifier une fuite</strong><small>Ce mot de passe est-il déjà dans une fuite de données ?</small><span class="chips"><em>Sécurité</em><em>k-anonymat</em></span><span class="go" aria-hidden="true">→</span></a>
+      <a class="card reveal" href="/phrase-de-passe.html"><span class="n">04</span><strong>Phrase de passe</strong><small>Des mots de passe longs, solides et faciles à retenir.</small><span class="chips"><em>Sécurité</em><em>Outil</em></span><span class="go" aria-hidden="true">→</span></a>
+      <a class="card reveal" href="/navigateur.html"><span class="n">05</span><strong>Ce que ton navigateur révèle</strong><small>Ce que n'importe quel site peut lire sur toi, sans rien demander.</small><span class="chips"><em>Vie privée</em><em>Pédagogie</em></span><span class="go" aria-hidden="true">→</span></a>
+      <a class="card reveal" href="/phishing.html"><span class="n">06</span><strong>Phishing</strong><small>Un analyseur de messages suspects et un quiz pour s'entraîner.</small><span class="chips"><em>Sécurité</em><em>Quiz</em></span><span class="go" aria-hidden="true">→</span></a>
     </div>
 
-    <h2>Contact</h2>
-    <p><a href="mailto:rhys@rhys.fr">rhys@rhys.fr</a></p>
+    <h2 class="sec reveal">Ressources</h2>
+    <div class="grid">
+      <a class="card ext reveal" href="https://bonjourlafuite.eu.org/" target="_blank" rel="noopener noreferrer"><span class="n">EXTERNE</span><strong>Bonjour la fuite</strong><small>Le recensement collaboratif des fuites de données en France, tenu par aeris : qui a fuité, quand, et quelles données sont concernées.</small><span class="chips"><em>Fuites de données</em><em>France</em></span><span class="go" aria-hidden="true">↗</span><span class="sr">(s'ouvre dans un nouvel onglet)</span></a>
+    </div>
 
+    <section class="contact reveal">
+      <a class="btn" href="mailto:rhys@rhys.fr">rhys@rhys.fr</a>
+    </section>
     <footer>© 2026 rhys.fr</footer>
   </main>
+
+  <script>
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Compteurs animés
+    const nb = $$(".grid:first-of-type .card").length;
+    $$("[data-count=auto]").forEach((el) => { el.dataset.count = nb; });
+    function count(el) {
+      const to = +el.dataset.count;
+      if (reduce || to === 0) { el.textContent = to; return; }
+      const t0 = performance.now();
+      (function f(t) {
+        const p = Math.min(1, (t - t0) / 1300);
+        el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(f);
+      })(t0);
+    }
+
+    // Apparition au scroll, avec décalage entre les cartes d'une même grille
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("in");
+      $$("[data-count]", e.target).forEach(count);
+      io.unobserve(e.target);
+    }), { threshold: 0.15 }) : null;
+    $$(".reveal").forEach((el) => {
+      el.style.setProperty("--d", (el.classList.contains("card") ? [...el.parentElement.children].indexOf(el) * 90 : 0) + "ms");
+      if (io) io.observe(el); else { el.classList.add("in"); $$("[data-count]", el).forEach(count); }
+    });
+
+    // Halo qui suit la souris + inclinaison des cartes (écrans avec souris uniquement)
+    if (matchMedia("(hover: hover)").matches && !reduce) {
+      const spot = document.querySelector(".spot");
+      addEventListener("pointermove", (e) => { spot.style.transform = "translate(" + (e.clientX - 300) + "px," + (e.clientY - 300) + "px)"; }, { passive: true });
+      $$(".card").forEach((c) => {
+        c.addEventListener("pointermove", (e) => {
+          const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+          c.style.setProperty("--mx", x + "px"); c.style.setProperty("--my", y + "px");
+          c.style.setProperty("--rx", ((y / r.height - 0.5) * -6) + "deg"); c.style.setProperty("--ry", ((x / r.width - 0.5) * 6) + "deg");
+        });
+        c.addEventListener("pointerleave", () => { c.style.setProperty("--rx", "0deg"); c.style.setProperty("--ry", "0deg"); });
+      });
+    }
+  </script>
 </body>
 </html>
